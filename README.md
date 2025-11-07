@@ -33,7 +33,7 @@ LARK_APP_SECRET=your_app_secret
 LARK_SPACE_ID=your_space_id
 ```
 
-**Note:** `LARK_ROOT_NODES` should be set as **GitHub Secret** (comma-separated format: `TOKEN1,TOKEN2,TOKEN3`). For local testing, you can add it to `.env`, but it's recommended to use GitHub Secrets for production.
+**Note:** `LARK_ROOT_NODES` should be set as **GitHub Variable** (comma-separated format: `TOKEN1,TOKEN2,TOKEN3`). For local testing, you can add it to `.env`, but it's recommended to use GitHub Variables for production.
 
 **How to find Space ID:**
 1. Open your Lark Wiki space in browser
@@ -51,11 +51,11 @@ LARK_SPACE_ID=your_space_id
 1. Open your Lark Wiki space in browser
 2. For each root page, copy the URL
 3. Extract the token from URL: `https://...larksuite.com/wiki/{TOKEN}`
-4. Add tokens as **GitHub Secret** `LARK_ROOT_NODES` (comma-separated format: `TOKEN1,TOKEN2,TOKEN3`)
+4. Add tokens as **GitHub Variable** `LARK_ROOT_NODES` (comma-separated format: `TOKEN1,TOKEN2,TOKEN3`)
 
 **Note:** 
 - Tenant token cannot list root nodes automatically (API limitation), so URLs must be provided manually.
-- `LARK_ROOT_NODES` should be set as GitHub Secret for production use. For local testing, you can add it to `.env` file.
+- `LARK_ROOT_NODES` should be set as GitHub Variable for production use. For local testing, you can add it to `.env` file.
 
 ### 3. Permissions Setup
 
@@ -79,7 +79,8 @@ The repository includes a GitHub Actions workflow that automatically:
 - Deploys to GitHub Pages
 
 **Setup:**
-1. Add secrets in GitHub: `LARK_APP_ID`, `LARK_APP_SECRET`, `LARK_ROOT_NODES`, `LARK_SPACE_ID`
+1. Add secrets in GitHub: `LARK_APP_ID`, `LARK_APP_SECRET`, `LARK_SPACE_ID`
+2. Add variable in GitHub: `LARK_ROOT_NODES` (comma-separated format: `TOKEN1,TOKEN2,TOKEN3`)
 2. Enable GitHub Pages (Settings > Pages > Source: GitHub Actions)
 3. Workflow runs automatically
 
@@ -92,12 +93,12 @@ See `docs/SERVERLESS_DEPLOYMENT.md` for detailed setup.
    - Space ID from your wiki space URL (the part after `/wiki/` and before node token)
 
 2. **Configure root node tokens:**
-   - Add tokens as GitHub Secret `LARK_ROOT_NODES` (comma-separated: `TOKEN1,TOKEN2`)
+   - Add tokens as GitHub Variable `LARK_ROOT_NODES` (comma-separated: `TOKEN1,TOKEN2`)
    - Extract tokens from wiki URLs: `https://...larksuite.com/wiki/{TOKEN}`
 
 3. **Setup configuration:**
    - Copy `.env.example` to `.env` and fill in your credentials
-   - Add `LARK_ROOT_NODES` as GitHub Secret (comma-separated format)
+   - Add `LARK_ROOT_NODES` as GitHub Variable (comma-separated format)
    - Edit `config.json` for output options (optional)
 
 4. **Run the script:**

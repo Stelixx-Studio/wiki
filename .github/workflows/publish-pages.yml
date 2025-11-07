@@ -48,11 +48,15 @@ jobs:
       env:
         LARK_APP_ID: ${{ secrets.LARK_APP_ID }}
         LARK_APP_SECRET: ${{ secrets.LARK_APP_SECRET }}
-        LARK_ROOT_NODES: ${{ secrets.LARK_ROOT_NODES }}
+        LARK_ROOT_NODES: ${{ vars.LARK_ROOT_NODES }}
         LARK_SPACE_ID: ${{ secrets.LARK_SPACE_ID }}
       run: |
-        if [ -z "${LARK_APP_ID}" ] || [ -z "${LARK_APP_SECRET}" ] || [ -z "${LARK_ROOT_NODES}" ]; then
-          echo "❌ Missing required secrets: LARK_APP_ID, LARK_APP_SECRET, or LARK_ROOT_NODES"
+        if [ -z "${LARK_APP_ID}" ] || [ -z "${LARK_APP_SECRET}" ]; then
+          echo "❌ Missing required secrets: LARK_APP_ID or LARK_APP_SECRET"
+          exit 1
+        fi
+        if [ -z "${LARK_ROOT_NODES}" ]; then
+          echo "❌ Missing required variable: LARK_ROOT_NODES"
           exit 1
         fi
         if [ -z "${LARK_SPACE_ID}" ]; then
