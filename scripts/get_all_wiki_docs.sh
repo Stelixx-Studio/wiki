@@ -498,10 +498,32 @@ def blocks_to_markdown(blocks, base_url='https://stelixx-studio.github.io/wiki',
                 if text:
                     markdown_lines.append(f"- {text}")
         elif block_type == 12:
-            if 'ordered' in item:
+            if 'bullet' in item:
+                text = extract_text_from_elements(item['bullet'].get('elements', []))
+                if text:
+                    markdown_lines.append(f"- {text}")
+            elif 'ordered' in item:
                 text = extract_text_from_elements(item['ordered'].get('elements', []))
                 if text:
                     markdown_lines.append(f"1. {text}")
+        elif block_type == 14:
+            if 'code' in item:
+                language = item['code'].get('style', {}).get('language', '')
+                language_map = {39: 'plaintext', 1: 'python', 2: 'javascript', 3: 'java', 4: 'cpp', 5: 'c', 6: 'csharp', 7: 'php', 8: 'ruby', 9: 'go', 10: 'swift', 11: 'kotlin', 12: 'typescript', 13: 'sql', 14: 'html', 15: 'css', 16: 'json', 17: 'xml', 18: 'yaml', 19: 'markdown', 20: 'bash', 21: 'shell', 22: 'powershell', 23: 'r', 24: 'matlab', 25: 'scala', 26: 'rust', 27: 'dart', 28: 'lua', 29: 'perl', 30: 'haskell', 31: 'clojure', 32: 'erlang', 33: 'elixir', 34: 'ocaml', 35: 'fsharp', 36: 'vb', 37: 'objectivec', 38: 'assembly', 39: 'plaintext'}
+                language_name = language_map.get(language, '')
+                text = extract_text_from_elements(item['code'].get('elements', []))
+                if text:
+                    markdown_lines.append(f"```{language_name}")
+                    markdown_lines.append(text)
+                    markdown_lines.append("```")
+        elif block_type == 15:
+            if 'code' in item:
+                language = item['code'].get('language', '')
+                text = extract_text_from_elements(item['code'].get('elements', []))
+                if text:
+                    markdown_lines.append(f"```{language}")
+                    markdown_lines.append(text)
+                    markdown_lines.append("```")
         elif block_type == 27:
             if 'image' in item:
                 image_token = item['image'].get('token', '')
@@ -743,6 +765,16 @@ generate_structure_files() {
       if [ "$INCLUDE_CONTENT" = true ]; then
       blocks_json=$(get_document_blocks "$doc_token")
       
+      # Debug: Log blocks retrieval
+      if [ "$VERBOSE" = true ]; then
+        if [ -n "$blocks_json" ] && [ "$blocks_json" != "[]" ] && [[ ! "$blocks_json" =~ ^Error ]]; then
+          local blocks_count=$(echo "$blocks_json" | python3 -c "import sys, json; d=json.load(sys.stdin); print(len(d) if isinstance(d, list) else 0)" 2>/dev/null || echo "0")
+          log "DEBUG" "  Retrieved $blocks_count blocks for document: $title"
+        else
+          log "DEBUG" "  No blocks retrieved for document: $title (blocks_json: ${blocks_json:0:100}...)"
+        fi
+      fi
+      
       if [ -n "$blocks_json" ] && [ "$blocks_json" != "[]" ] && [[ ! "$blocks_json" =~ ^Error ]]; then
         # Extract and download images
         echo "$blocks_json" | timeout 10 python3 -c "
@@ -878,10 +910,32 @@ def blocks_to_markdown(blocks, base_url='https://stelixx-studio.github.io/wiki',
                 if text:
                     markdown_lines.append(f"- {text}")
         elif block_type == 12:
-            if 'ordered' in item:
+            if 'bullet' in item:
+                text = extract_text_from_elements(item['bullet'].get('elements', []))
+                if text:
+                    markdown_lines.append(f"- {text}")
+            elif 'ordered' in item:
                 text = extract_text_from_elements(item['ordered'].get('elements', []))
                 if text:
                     markdown_lines.append(f"1. {text}")
+        elif block_type == 14:
+            if 'code' in item:
+                language = item['code'].get('style', {}).get('language', '')
+                language_map = {39: 'plaintext', 1: 'python', 2: 'javascript', 3: 'java', 4: 'cpp', 5: 'c', 6: 'csharp', 7: 'php', 8: 'ruby', 9: 'go', 10: 'swift', 11: 'kotlin', 12: 'typescript', 13: 'sql', 14: 'html', 15: 'css', 16: 'json', 17: 'xml', 18: 'yaml', 19: 'markdown', 20: 'bash', 21: 'shell', 22: 'powershell', 23: 'r', 24: 'matlab', 25: 'scala', 26: 'rust', 27: 'dart', 28: 'lua', 29: 'perl', 30: 'haskell', 31: 'clojure', 32: 'erlang', 33: 'elixir', 34: 'ocaml', 35: 'fsharp', 36: 'vb', 37: 'objectivec', 38: 'assembly', 39: 'plaintext'}
+                language_name = language_map.get(language, '')
+                text = extract_text_from_elements(item['code'].get('elements', []))
+                if text:
+                    markdown_lines.append(f"```{language_name}")
+                    markdown_lines.append(text)
+                    markdown_lines.append("```")
+        elif block_type == 15:
+            if 'code' in item:
+                language = item['code'].get('language', '')
+                text = extract_text_from_elements(item['code'].get('elements', []))
+                if text:
+                    markdown_lines.append(f"```{language}")
+                    markdown_lines.append(text)
+                    markdown_lines.append("```")
         elif block_type == 27:
             if 'image' in item:
                 image_token = item['image'].get('token', '')
@@ -1002,7 +1056,16 @@ PYEOF
           local content_lines=$(echo "$content" | grep -v '^#' | grep -v '^$' | grep -v '^____$' | grep -v '^---$' | wc -l | tr -d ' ')
           if [ "$content_lines" -lt 1 ]; then
             log_error "Content conversion returned minimal content for document: $title (only $content_lines meaningful lines)"
-            log_error "  Content preview: $(echo "$content" | head -5 | tr '\n' ' ')"
+            log_error "  Content preview: $(echo "$content" | head -10 | tr '\n' '|')"
+            if [ "$VERBOSE" = true ]; then
+              # Save blocks to temp file for debugging
+              local debug_blocks_file="/tmp/debug_blocks_${doc_token}.json"
+              echo "$blocks_json" > "$debug_blocks_file"
+              log "DEBUG" "  Saved blocks to $debug_blocks_file for debugging"
+              # Show block types
+              local block_types=$(echo "$blocks_json" | python3 -c "import sys, json; blocks=json.load(sys.stdin); print(','.join([str(b.get('block_type', 'unknown')) for b in blocks[:10]]))" 2>/dev/null || echo "unknown")
+              log "DEBUG" "  Block types found: $block_types"
+            fi
             # Don't fail - just log the warning, as some documents might legitimately have minimal content
           fi
         fi
