@@ -981,6 +981,9 @@ PYEOF
         2>&1)
         rm -f "$temp_blocks_file"
         local exit_code=$?
+        # Trim whitespace from content
+        content=$(echo "$content" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        
         if [ $exit_code -ne 0 ]; then
           log_error "Content conversion failed for document: $title (exit code: $exit_code)"
           content="*Content conversion failed*"
@@ -993,6 +996,13 @@ PYEOF
         elif [[ "$content" =~ ^timeout ]]; then
           log_error "Content conversion timeout for document: $title"
           content="*Content conversion failed*"
+        else
+          # Check if content is meaningful (not just title or minimal)
+          local content_lines=$(echo "$content" | grep -v '^#' | grep -v '^$' | wc -l | tr -d ' ')
+          if [ "$content_lines" -lt 1 ]; then
+            log_error "Content conversion returned minimal content for document: $title (only $content_lines non-empty lines)"
+            content="*Content conversion failed - minimal content*"
+          fi
         fi
       else
         content="*Content not available*"
