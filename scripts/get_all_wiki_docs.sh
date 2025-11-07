@@ -488,7 +488,7 @@ def blocks_to_markdown(blocks, images_dir='images'):
             if 'image' in item:
                 image_token = item['image'].get('token', '')
                 if image_token:
-                    markdown_lines.append(f"![Image](images/{image_token}.png)")
+                    markdown_lines.append(f"![Image](/images/{image_token}.png)")
         elif block_type == 34:
             if 'quote_container' in item:
                 children = item.get('children', [])
@@ -866,7 +866,7 @@ def blocks_to_markdown(blocks, images_dir='images'):
             if 'image' in item:
                 image_token = item['image'].get('token', '')
                 if image_token:
-                    markdown_lines.append(f"![Image](images/{image_token}.png)")
+                    markdown_lines.append(f"![Image](/images/{image_token}.png)")
         elif block_type == 34:
             if 'quote_container' in item:
                 children = item.get('children', [])
