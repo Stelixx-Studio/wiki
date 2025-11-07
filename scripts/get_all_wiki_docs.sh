@@ -132,7 +132,20 @@ DOCX_API_URL="https://open.feishu.cn/open-apis/docx/v1/documents"
 DRIVE_API_URL="https://open.feishu.cn/open-apis/drive/v1/files"
 
 # GitHub Pages base URL for image links
-GITHUB_PAGES_BASE_URL="https://stelixx-studio.github.io/wiki"
+# Construct from GitHub Actions environment variables if available
+# Format: https://{owner}.github.io/{repo}/
+if [ -n "${GITHUB_REPOSITORY}" ]; then
+  # Running in GitHub Actions - construct URL from repository
+  GITHUB_REPO_OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f1 | tr '[:upper:]' '[:lower:]')
+  GITHUB_REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f2)
+  GITHUB_PAGES_BASE_URL="https://${GITHUB_REPO_OWNER}.github.io/${GITHUB_REPO_NAME}"
+elif [ -n "${GITHUB_PAGES_BASE_URL}" ]; then
+  # Use provided environment variable
+  GITHUB_PAGES_BASE_URL="${GITHUB_PAGES_BASE_URL}"
+else
+  # Fallback for local execution
+  GITHUB_PAGES_BASE_URL="https://stelixx-studio.github.io/wiki"
+fi
 
 ################################################################################
 # GLOBAL VARIABLES

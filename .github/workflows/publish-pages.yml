@@ -65,6 +65,7 @@ jobs:
         echo "LARK_APP_ID=${LARK_APP_ID}" >> $GITHUB_ENV
         echo "LARK_APP_SECRET=${LARK_APP_SECRET}" >> $GITHUB_ENV
         echo "LARK_ROOT_NODES=${LARK_ROOT_NODES}" >> $GITHUB_ENV
+        # GitHub Pages URL is automatically constructed from GITHUB_REPOSITORY
         # Create .env file for script
         echo "LARK_APP_ID=${LARK_APP_ID}" > .env
         echo "LARK_APP_SECRET=${LARK_APP_SECRET}" >> .env
