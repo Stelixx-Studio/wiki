@@ -1070,7 +1070,7 @@ main() {
       IFS='|' read -r doc_token root_title has_child <<< "$node_details"
     fi
     log "INFO" "Processing root: ${root_title:-$root_token}"
-    traverse_node "$root_token" "${root_title:-Unknown}" "$root_index" "ROOT" "" ""
+    traverse_node "$root_token" "${root_title:-Unknown}" "$root_index" "ROOT" "" "" ""
     echo ""
   done
   
