@@ -81,8 +81,8 @@ The repository includes a GitHub Actions workflow that automatically:
 **Setup:**
 1. Add secrets in GitHub: `LARK_APP_ID`, `LARK_APP_SECRET`, `LARK_SPACE_ID`
 2. Add variable in GitHub: `LARK_ROOT_NODES` (comma-separated format: `TOKEN1,TOKEN2,TOKEN3`)
-2. Enable GitHub Pages (Settings > Pages > Source: GitHub Actions)
-3. Workflow runs automatically
+3. Enable GitHub Pages (Settings > Pages > Source: GitHub Actions)
+4. Workflow runs automatically
 
 See `docs/SERVERLESS_DEPLOYMENT.md` for detailed setup.
 
