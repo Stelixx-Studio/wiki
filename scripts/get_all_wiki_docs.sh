@@ -19,26 +19,29 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Change to project root directory
 cd "$PROJECT_ROOT"
 
-# Load sensitive credentials from .env file
+# Load sensitive credentials from .env file (if exists)
+# Note: LARK_ROOT_NODES should come from environment variables (GitHub Secrets) first
 if [ -f .env ]; then
   set -a
   source .env
   set +a
-  
-  # Map LARK_* variables to script variables
-  APP_ID="${LARK_APP_ID}"
-  APP_SECRET="${LARK_APP_SECRET}"
-  SPACE_ID="${LARK_SPACE_ID}"
-  
-  # Parse root nodes from .env (comma-separated format: TOKEN1,TOKEN2,TOKEN3)
-  # Support both comma-separated and JSON array formats for backward compatibility
-  declare -a ROOT_NODES=()
-  
-  if [ -n "${LARK_ROOT_NODES}" ]; then
-    # Check if it's JSON array format (starts with [)
-    if [[ "${LARK_ROOT_NODES}" =~ ^\[.*\]$ ]]; then
-      # JSON array format (backward compatibility)
-      ROOT_NODES_ARRAY=$(echo "${LARK_ROOT_NODES}" | python3 -c "
+fi
+
+# Map LARK_* variables to script variables
+# Prioritize environment variables (from GitHub Actions) over .env file
+APP_ID="${LARK_APP_ID}"
+APP_SECRET="${LARK_APP_SECRET}"
+SPACE_ID="${LARK_SPACE_ID}"
+
+# Parse root nodes from environment variable (set by GitHub Actions from secrets)
+# Support both comma-separated and JSON array formats for backward compatibility
+declare -a ROOT_NODES=()
+
+if [ -n "${LARK_ROOT_NODES}" ]; then
+  # Check if it's JSON array format (starts with [)
+  if [[ "${LARK_ROOT_NODES}" =~ ^\[.*\]$ ]]; then
+    # JSON array format (backward compatibility)
+    ROOT_NODES_ARRAY=$(echo "${LARK_ROOT_NODES}" | python3 -c "
 import sys, json
 try:
     tokens = json.load(sys.stdin)
@@ -47,44 +50,41 @@ try:
 except:
     pass
 " 2>/dev/null)
-      while IFS= read -r token; do
-        if [ -n "$token" ]; then
-          ROOT_NODES+=("$token")
-        fi
-      done <<< "$ROOT_NODES_ARRAY"
-    else
-      # Comma-separated format (new format)
-      IFS=',' read -ra TOKENS <<< "${LARK_ROOT_NODES}"
-      for token in "${TOKENS[@]}"; do
-        # Trim whitespace
-        token=$(echo "$token" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        if [ -n "$token" ]; then
-          ROOT_NODES+=("$token")
-        fi
-      done
-    fi
+    while IFS= read -r token; do
+      if [ -n "$token" ]; then
+        ROOT_NODES+=("$token")
+      fi
+    done <<< "$ROOT_NODES_ARRAY"
+  else
+    # Comma-separated format (new format)
+    IFS=',' read -ra TOKENS <<< "${LARK_ROOT_NODES}"
+    for token in "${TOKENS[@]}"; do
+      # Trim whitespace
+      token=$(echo "$token" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      if [ -n "$token" ]; then
+        ROOT_NODES+=("$token")
+      fi
+    done
   fi
-  
-  if [ ${#ROOT_NODES[@]} -eq 0 ]; then
-    echo "ERROR: LARK_ROOT_NODES not found or empty in .env file"
-    echo "Please add root nodes to .env file. Example:"
-    echo 'LARK_ROOT_NODES=TOKEN1,TOKEN2,TOKEN3'
-    exit 1
-  fi
-  
-  # Validate required variables
-  if [ -z "$APP_ID" ] || [ -z "$APP_SECRET" ]; then
-    echo "ERROR: LARK_APP_ID or LARK_APP_SECRET not found in .env file"
-    exit 1
-  fi
-  
-  if [ -z "$SPACE_ID" ]; then
-    echo "ERROR: LARK_SPACE_ID not found in .env file"
-    echo "Please add LARK_SPACE_ID to .env file or GitHub secrets"
-    exit 1
-  fi
-else
-  echo "ERROR: .env file not found. Please create .env file from .env.example"
+fi
+
+# Validate required variables
+if [ -z "$APP_ID" ] || [ -z "$APP_SECRET" ]; then
+  echo "ERROR: LARK_APP_ID or LARK_APP_SECRET not found"
+  echo "Please set them in .env file or as environment variables (GitHub Secrets)"
+  exit 1
+fi
+
+if [ -z "$SPACE_ID" ]; then
+  echo "ERROR: LARK_SPACE_ID not found"
+  echo "Please set it in .env file or as environment variable (GitHub Secret)"
+  exit 1
+fi
+
+if [ ${#ROOT_NODES[@]} -eq 0 ]; then
+  echo "ERROR: LARK_ROOT_NODES not found or empty"
+  echo "Please set it as GitHub Secret (comma-separated format: TOKEN1,TOKEN2,TOKEN3)"
+  echo "For local testing, you can add it to .env file"
   exit 1
 fi
 

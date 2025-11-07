@@ -31,10 +31,9 @@ Edit `.env` with your credentials:
 LARK_APP_ID=your_app_id
 LARK_APP_SECRET=your_app_secret
 LARK_SPACE_ID=your_space_id
-LARK_ROOT_NODES=TOKEN1,TOKEN2,TOKEN3
 ```
 
-**Note:** `LARK_ROOT_NODES` should be comma-separated tokens (e.g., `TOKEN1,TOKEN2,TOKEN3`). JSON array format is also supported for backward compatibility.
+**Note:** `LARK_ROOT_NODES` should be set as **GitHub Secret** (comma-separated format: `TOKEN1,TOKEN2,TOKEN3`). For local testing, you can add it to `.env`, but it's recommended to use GitHub Secrets for production.
 
 **How to find Space ID:**
 1. Open your Lark Wiki space in browser
@@ -52,9 +51,11 @@ LARK_ROOT_NODES=TOKEN1,TOKEN2,TOKEN3
 1. Open your Lark Wiki space in browser
 2. For each root page, copy the URL
 3. Extract the token from URL: `https://...larksuite.com/wiki/{TOKEN}`
-4. Add tokens to `.env` as `LARK_ROOT_NODES=TOKEN1,TOKEN2,TOKEN3`
+4. Add tokens as **GitHub Secret** `LARK_ROOT_NODES` (comma-separated format: `TOKEN1,TOKEN2,TOKEN3`)
 
-**Note:** Tenant token cannot list root nodes automatically (API limitation), so URLs must be provided manually.
+**Note:** 
+- Tenant token cannot list root nodes automatically (API limitation), so URLs must be provided manually.
+- `LARK_ROOT_NODES` should be set as GitHub Secret for production use. For local testing, you can add it to `.env` file.
 
 ### 3. Permissions Setup
 
@@ -91,7 +92,7 @@ See `docs/SERVERLESS_DEPLOYMENT.md` for detailed setup.
    - Space ID from your wiki space URL (the part after `/wiki/` and before node token)
 
 2. **Configure root node tokens:**
-   - Manually add tokens to `.env` as `LARK_ROOT_NODES=TOKEN1,TOKEN2`
+   - Add tokens as GitHub Secret `LARK_ROOT_NODES` (comma-separated: `TOKEN1,TOKEN2`)
    - Extract tokens from wiki URLs: `https://...larksuite.com/wiki/{TOKEN}`
 
 3. **Setup configuration:**
