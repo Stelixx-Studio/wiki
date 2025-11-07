@@ -1007,10 +1007,11 @@ PYEOF
         # This is a child of the current node
         local child_clean_path="${child_doc_path#/}"
         local child_file_path="${child_clean_path}.md"
+        local child_full_url="${GITHUB_PAGES_BASE_URL}/${child_file_path}"
         if [ -z "$sub_pages" ]; then
           sub_pages="## Sub-page list\n\n"
         fi
-        sub_pages="${sub_pages}- [$child_title]($child_file_path)\n"
+        sub_pages="${sub_pages}- [$child_title]($child_full_url)\n"
       fi
     done
     
