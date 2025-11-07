@@ -131,6 +131,9 @@ WIKI_BASE_URL="https://open.feishu.cn/open-apis/wiki/v2/spaces"
 DOCX_API_URL="https://open.feishu.cn/open-apis/docx/v1/documents"
 DRIVE_API_URL="https://open.feishu.cn/open-apis/drive/v1/files"
 
+# GitHub Pages base URL for image links
+GITHUB_PAGES_BASE_URL="https://stelixx-studio.github.io/wiki"
+
 ################################################################################
 # GLOBAL VARIABLES
 ################################################################################
@@ -374,7 +377,7 @@ get_document_content() {
     return 1
   fi
   
-  echo "$blocks_json" | python3 << 'PYEOF'
+  echo "$blocks_json" | GITHUB_PAGES_BASE_URL="$GITHUB_PAGES_BASE_URL" python3 << 'PYEOF'
 import sys
 import json
 import urllib.parse
@@ -417,7 +420,7 @@ def extract_text_from_elements(elements):
             parts.append(f"${equation}$")
     return ''.join(parts)
 
-def blocks_to_markdown(blocks, images_dir='images'):
+def blocks_to_markdown(blocks, base_url='https://stelixx-studio.github.io/wiki', images_dir='images'):
     markdown_lines = []
     block_map = {}
     for item in blocks:
@@ -488,7 +491,7 @@ def blocks_to_markdown(blocks, images_dir='images'):
             if 'image' in item:
                 image_token = item['image'].get('token', '')
                 if image_token:
-                    markdown_lines.append(f"![Image](/wiki/images/{image_token}.png)")
+                    markdown_lines.append(f"![Image]({base_url}/images/{image_token}.png)")
         elif block_type == 34:
             if 'quote_container' in item:
                 children = item.get('children', [])
@@ -565,7 +568,9 @@ try:
     if not blocks:
         print('')
         sys.exit(0)
-    markdown = blocks_to_markdown(blocks, 'images')
+    import os
+    base_url = os.environ.get('GITHUB_PAGES_BASE_URL', 'https://stelixx-studio.github.io/wiki')
+    markdown = blocks_to_markdown(blocks, base_url, 'images')
     print(markdown)
 except json.JSONDecodeError as e:
     print(f'Error parsing JSON: {e}', file=sys.stderr)
@@ -620,11 +625,11 @@ generate_files_list() {
   # Create llms.txt following the standard format (based on llmstxt.org specification)
   {
     echo "# Stelixx Wiki Documentation"
-    echo ""
+        echo ""
     echo "> Documentation site containing wiki content exported from Lark Wiki. All content is available as Markdown files, JSON metadata, and images."
-    echo ""
+        echo ""
     echo "## Documentation Files"
-    echo ""
+      echo ""
     local i=0
     for file in "${md_files[@]}"; do
       local title="${md_titles[$i]}"
@@ -684,10 +689,10 @@ generate_structure_files() {
   
   # Create files in directory structure with actual content
   local doc_count=0
-  for doc_info in "${ALL_DOCUMENTS[@]}"; do
+    for doc_info in "${ALL_DOCUMENTS[@]}"; do
     doc_count=$((doc_count + 1))
-    IFS='|' read -r doc_num level node_token doc_token title parent doc_path <<< "$doc_info"
-    
+      IFS='|' read -r doc_num level node_token doc_token title parent doc_path <<< "$doc_info"
+      
     log "INFO" "Processing document $doc_count/${#ALL_DOCUMENTS[@]}: $title"
     
     # Create safe file name (remove special chars, spaces)
@@ -752,7 +757,7 @@ except:
         # Convert blocks to markdown with timeout
         local temp_blocks_file=$(mktemp)
         printf '%s' "$blocks_json" > "$temp_blocks_file"
-        content=$(timeout 30 python3 - "$temp_blocks_file" << 'PYEOF'
+        content=$(timeout 30 env GITHUB_PAGES_BASE_URL="$GITHUB_PAGES_BASE_URL" python3 - "$temp_blocks_file" << 'PYEOF'
 import sys
 import json
 import urllib.parse
@@ -795,7 +800,7 @@ def extract_text_from_elements(elements):
             parts.append(f"${equation}$")
     return ''.join(parts)
 
-def blocks_to_markdown(blocks, images_dir='images'):
+def blocks_to_markdown(blocks, base_url='https://stelixx-studio.github.io/wiki', images_dir='images'):
     markdown_lines = []
     block_map = {}
     for item in blocks:
@@ -866,7 +871,7 @@ def blocks_to_markdown(blocks, images_dir='images'):
             if 'image' in item:
                 image_token = item['image'].get('token', '')
                 if image_token:
-                    markdown_lines.append(f"![Image](/wiki/images/{image_token}.png)")
+                    markdown_lines.append(f"![Image]({base_url}/images/{image_token}.png)")
         elif block_type == 34:
             if 'quote_container' in item:
                 children = item.get('children', [])
@@ -945,7 +950,9 @@ try:
     if not blocks:
         print('')
         sys.exit(0)
-    markdown = blocks_to_markdown(blocks, 'images')
+    import os
+    base_url = os.environ.get('GITHUB_PAGES_BASE_URL', 'https://stelixx-studio.github.io/wiki')
+    markdown = blocks_to_markdown(blocks, base_url, 'images')
     print(markdown)
 except json.JSONDecodeError as e:
     print(f'Error parsing JSON: {e}', file=sys.stderr)
@@ -985,7 +992,6 @@ PYEOF
       IFS='|' read -r child_doc_num child_level child_node_token child_doc_token child_title child_parent child_doc_path <<< "$child_info"
       if [ "$child_parent" = "$title" ]; then
         # This is a child of the current node
-        local child_safe_title=$(echo "$child_title" | sed 's/[^a-zA-Z0-9]/_/g' | sed 's/__*/_/g' | sed 's/^_\|_$//g')
         local child_clean_path="${child_doc_path#/}"
         local child_file_path="${child_clean_path}.md"
         if [ -z "$sub_pages" ]; then
