@@ -998,10 +998,12 @@ PYEOF
           content="*Content conversion failed*"
         else
           # Check if content is meaningful (not just title or minimal)
-          local content_lines=$(echo "$content" | grep -v '^#' | grep -v '^$' | wc -l | tr -d ' ')
+          # Count non-empty lines that aren't just headings or separators
+          local content_lines=$(echo "$content" | grep -v '^#' | grep -v '^$' | grep -v '^____$' | grep -v '^---$' | wc -l | tr -d ' ')
           if [ "$content_lines" -lt 1 ]; then
-            log_error "Content conversion returned minimal content for document: $title (only $content_lines non-empty lines)"
-            content="*Content conversion failed - minimal content*"
+            log_error "Content conversion returned minimal content for document: $title (only $content_lines meaningful lines)"
+            log_error "  Content preview: $(echo "$content" | head -5 | tr '\n' ' ')"
+            # Don't fail - just log the warning, as some documents might legitimately have minimal content
           fi
         fi
       else
