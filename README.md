@@ -34,6 +34,12 @@ LARK_SPACE_ID=your_space_id
 LARK_ROOT_NODES='["TOKEN1", "TOKEN2", "TOKEN3"]'
 ```
 
+**How to find Space ID:**
+1. Open your Lark Wiki space in browser
+2. Look at the URL: `https://{domain}.larksuite.com/wiki/{SPACE_ID}/...`
+3. The Space ID is the part after `/wiki/` and before the next `/` or node token
+4. Example: If URL is `https://example.larksuite.com/wiki/abc123def456/wiki/TOKEN`, then Space ID is `abc123def456`
+
 **Note:** `LARK_ROOT_NODES` should be a JSON array of node tokens (strings only). Titles are fetched automatically from the API.
 
 ### 2. Configure Root Nodes
@@ -81,7 +87,7 @@ See `docs/SERVERLESS_DEPLOYMENT.md` for detailed setup.
 
 1. **Get your Lark credentials:**
    - App ID and App Secret from Lark Open Platform
-   - Space ID from your wiki space
+   - Space ID from your wiki space URL (the part after `/wiki/` and before node token)
 
 2. **Configure root node tokens:**
    - Manually add tokens to `.env` as `LARK_ROOT_NODES='["TOKEN1", "TOKEN2"]'`
