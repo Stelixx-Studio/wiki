@@ -260,6 +260,7 @@ traverse_node() {
   local parent_title=$4
   local indent_prefix=$5
   local parent_path=$6  # Directory path for this node
+  local parent_node_token=$7  # Parent node token for matching
   
   log "DEBUG" "Traversing: $title (level $level)"
   
@@ -280,8 +281,9 @@ traverse_node() {
   local current_path="${parent_path}/${safe_title}"
   
   # Store document info with path
+  # Format: doc_num|level|node_token|doc_token|title|parent_title|parent_node_token|current_path
   DOC_COUNT=$((DOC_COUNT + 1))
-  ALL_DOCUMENTS+=("$DOC_COUNT|$level|$node_token|$doc_token|$node_title|$parent_title|$current_path")
+  ALL_DOCUMENTS+=("$DOC_COUNT|$level|$node_token|$doc_token|$node_title|$parent_title|$parent_node_token|$current_path")
   
   log "INFO" "${indent_prefix}📄 [$level] $node_title"
   log "DEBUG" "${indent_prefix}   Node Token: $node_token"
@@ -305,7 +307,7 @@ traverse_node() {
         local next_level="$level.$child_count"
         local next_indent="${indent_prefix}│  "
         
-        traverse_node "$child_token" "$child_title" "$next_level" "$node_title" "$next_indent" "$current_path"
+        traverse_node "$child_token" "$child_title" "$next_level" "$node_title" "$next_indent" "$current_path" "$node_token"
       done < <(echo "$children")
     fi
   else
@@ -704,7 +706,7 @@ generate_structure_files() {
   local doc_count=0
     for doc_info in "${ALL_DOCUMENTS[@]}"; do
     doc_count=$((doc_count + 1))
-      IFS='|' read -r doc_num level node_token doc_token title parent doc_path <<< "$doc_info"
+      IFS='|' read -r doc_num level node_token doc_token title parent parent_node_token doc_path <<< "$doc_info"
       
     log "INFO" "Processing document $doc_count/${#ALL_DOCUMENTS[@]}: $title"
     
@@ -1002,8 +1004,8 @@ PYEOF
     # Check if this node has children (sub-pages) and generate sub-page list
     local sub_pages=""
     for child_info in "${ALL_DOCUMENTS[@]}"; do
-      IFS='|' read -r child_doc_num child_level child_node_token child_doc_token child_title child_parent child_doc_path <<< "$child_info"
-      if [ "$child_parent" = "$title" ]; then
+      IFS='|' read -r child_doc_num child_level child_node_token child_doc_token child_title child_parent child_parent_node_token child_doc_path <<< "$child_info"
+      if [ "$child_parent_node_token" = "$node_token" ]; then
         # This is a child of the current node
         local child_clean_path="${child_doc_path#/}"
         local child_file_path="${child_clean_path}.md"
