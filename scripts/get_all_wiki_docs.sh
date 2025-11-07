@@ -30,8 +30,15 @@ if [ -f .env ]; then
   APP_SECRET="${LARK_APP_SECRET}"
   SPACE_ID="${LARK_SPACE_ID}"
   
-  # Parse root nodes from .env (stored as JSON array of tokens)
-  ROOT_NODES_ARRAY=$(echo "${LARK_ROOT_NODES:-[]}" | python3 -c "
+  # Parse root nodes from .env (comma-separated format: TOKEN1,TOKEN2,TOKEN3)
+  # Support both comma-separated and JSON array formats for backward compatibility
+  declare -a ROOT_NODES=()
+  
+  if [ -n "${LARK_ROOT_NODES}" ]; then
+    # Check if it's JSON array format (starts with [)
+    if [[ "${LARK_ROOT_NODES}" =~ ^\[.*\]$ ]]; then
+      # JSON array format (backward compatibility)
+      ROOT_NODES_ARRAY=$(echo "${LARK_ROOT_NODES}" | python3 -c "
 import sys, json
 try:
     tokens = json.load(sys.stdin)
@@ -40,19 +47,28 @@ try:
 except:
     pass
 " 2>/dev/null)
-  
-  # Convert to array (tokens only, titles will be fetched from API)
-  declare -a ROOT_NODES=()
-  while IFS= read -r token; do
-    if [ -n "$token" ]; then
-      ROOT_NODES+=("$token")
+      while IFS= read -r token; do
+        if [ -n "$token" ]; then
+          ROOT_NODES+=("$token")
+        fi
+      done <<< "$ROOT_NODES_ARRAY"
+    else
+      # Comma-separated format (new format)
+      IFS=',' read -ra TOKENS <<< "${LARK_ROOT_NODES}"
+      for token in "${TOKENS[@]}"; do
+        # Trim whitespace
+        token=$(echo "$token" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        if [ -n "$token" ]; then
+          ROOT_NODES+=("$token")
+        fi
+      done
     fi
-  done <<< "$ROOT_NODES_ARRAY"
+  fi
   
   if [ ${#ROOT_NODES[@]} -eq 0 ]; then
     echo "ERROR: LARK_ROOT_NODES not found or empty in .env file"
     echo "Please add root nodes to .env file. Example:"
-    echo 'LARK_ROOT_NODES='\''["TOKEN1", "TOKEN2", "TOKEN3"]\'''
+    echo 'LARK_ROOT_NODES=TOKEN1,TOKEN2,TOKEN3'
     exit 1
   fi
   

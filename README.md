@@ -31,8 +31,10 @@ Edit `.env` with your credentials:
 LARK_APP_ID=your_app_id
 LARK_APP_SECRET=your_app_secret
 LARK_SPACE_ID=your_space_id
-LARK_ROOT_NODES='["TOKEN1", "TOKEN2", "TOKEN3"]'
+LARK_ROOT_NODES=TOKEN1,TOKEN2,TOKEN3
 ```
+
+**Note:** `LARK_ROOT_NODES` should be comma-separated tokens (e.g., `TOKEN1,TOKEN2,TOKEN3`). JSON array format is also supported for backward compatibility.
 
 **How to find Space ID:**
 1. Open your Lark Wiki space in browser
@@ -40,7 +42,6 @@ LARK_ROOT_NODES='["TOKEN1", "TOKEN2", "TOKEN3"]'
 3. The Space ID is the part after `/wiki/` and before the next `/` or node token
 4. Example: If URL is `https://example.larksuite.com/wiki/abc123def456/wiki/TOKEN`, then Space ID is `abc123def456`
 
-**Note:** `LARK_ROOT_NODES` should be a JSON array of node tokens (strings only). Titles are fetched automatically from the API.
 
 ### 2. Configure Root Nodes
 
@@ -51,7 +52,7 @@ LARK_ROOT_NODES='["TOKEN1", "TOKEN2", "TOKEN3"]'
 1. Open your Lark Wiki space in browser
 2. For each root page, copy the URL
 3. Extract the token from URL: `https://...larksuite.com/wiki/{TOKEN}`
-4. Add tokens to `.env` as `LARK_ROOT_NODES='["TOKEN1", "TOKEN2", "TOKEN3"]'`
+4. Add tokens to `.env` as `LARK_ROOT_NODES=TOKEN1,TOKEN2,TOKEN3`
 
 **Note:** Tenant token cannot list root nodes automatically (API limitation), so URLs must be provided manually.
 
@@ -90,7 +91,7 @@ See `docs/SERVERLESS_DEPLOYMENT.md` for detailed setup.
    - Space ID from your wiki space URL (the part after `/wiki/` and before node token)
 
 2. **Configure root node tokens:**
-   - Manually add tokens to `.env` as `LARK_ROOT_NODES='["TOKEN1", "TOKEN2"]'`
+   - Manually add tokens to `.env` as `LARK_ROOT_NODES=TOKEN1,TOKEN2`
    - Extract tokens from wiki URLs: `https://...larksuite.com/wiki/{TOKEN}`
 
 3. **Setup configuration:**
