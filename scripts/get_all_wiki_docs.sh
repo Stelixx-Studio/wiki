@@ -26,12 +26,12 @@ if [ -f .env ]; then
   source .env
   set +a
 fi
-
-# Map LARK_* variables to script variables
+  
+  # Map LARK_* variables to script variables
 # Prioritize environment variables (from GitHub Actions) over .env file
-APP_ID="${LARK_APP_ID}"
-APP_SECRET="${LARK_APP_SECRET}"
-SPACE_ID="${LARK_SPACE_ID}"
+  APP_ID="${LARK_APP_ID}"
+  APP_SECRET="${LARK_APP_SECRET}"
+  SPACE_ID="${LARK_SPACE_ID}"
 
 # Parse root nodes from environment variable (set by GitHub Actions from secrets)
 # Support both comma-separated and JSON array formats for backward compatibility
@@ -101,15 +101,6 @@ try:
 except:
     print('output')
 ")
-  
-  JSON_FILE="$OUTPUT_DIRECTORY/$(echo "$CONFIG_DATA" | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    print(data.get('output', {}).get('json_file', 'documents.json'))
-except:
-    print('documents.json')
-")"
   
   # Parse options
   VERBOSE=$(echo "$CONFIG_DATA" | python3 -c "
@@ -1053,9 +1044,6 @@ main() {
   
   log "INFO" "✓ Traversal complete! Found $DOC_COUNT documents"
   echo ""
-  
-  # Generate reports
-  generate_json_report
   
   # Generate directory structure files
   generate_structure_files
