@@ -979,21 +979,11 @@ PYEOF
       content="*Content retrieval disabled (set INCLUDE_CONTENT=true in config.json)*"
     fi
     
-    # Create markdown file with metadata
+    # Create markdown file with content only (no sensitive token information)
     {
       echo "# $title"
       echo ""
-      echo "**Level:** $level"
-      echo "**Node Token:** \`$node_token\`"
-      echo "**Document Token:** \`$doc_token\`"
-      if [ -n "$parent" ] && [ "$parent" != "ROOT" ]; then
-        echo "**Parent:** $parent"
-      fi
-      echo "**URL:** https://qjpju0vjxley.jp.larksuite.com/wiki/$node_token"
-      echo ""
-      echo "---"
-      echo ""
-          echo "$content"
+      echo "$content"
     } > "$file_path"
   done
   
