@@ -96,7 +96,8 @@ See `docs/SERVERLESS_DEPLOYMENT.md` for detailed setup.
    - Extract tokens from wiki URLs: `https://...larksuite.com/wiki/{TOKEN}`
 
 3. **Setup configuration:**
-   - Copy `.env.example` to `.env` and fill in your credentials and root node tokens
+   - Copy `.env.example` to `.env` and fill in your credentials
+   - Add `LARK_ROOT_NODES` as GitHub Secret (comma-separated format)
    - Edit `config.json` for output options (optional)
 
 4. **Run the script:**
