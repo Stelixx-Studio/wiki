@@ -1,0 +1,88 @@
+name: Publish Wiki to GitHub Pages
+
+on:
+  # Run on schedule (daily at 2 AM UTC)
+  schedule:
+    - cron: '0 2 * * *'
+  
+  # Run on manual trigger
+  workflow_dispatch:
+  
+  # Run when wiki content changes
+  push:
+    branches:
+      - main
+    paths:
+      - 'output/**'
+      - 'scripts/get_all_wiki_docs.sh'
+      - '.github/workflows/publish-pages.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    
+    - name: Load environment variables
+      env:
+        LARK_APP_ID: ${{ secrets.LARK_APP_ID }}
+        LARK_APP_SECRET: ${{ secrets.LARK_APP_SECRET }}
+        LARK_ROOT_NODES: ${{ secrets.LARK_ROOT_NODES }}
+        LARK_SPACE_ID: ${{ secrets.LARK_SPACE_ID }}
+      run: |
+        if [ -z "${LARK_APP_ID}" ] || [ -z "${LARK_APP_SECRET}" ] || [ -z "${LARK_ROOT_NODES}" ]; then
+          echo "❌ Missing required secrets: LARK_APP_ID, LARK_APP_SECRET, or LARK_ROOT_NODES"
+          exit 1
+        fi
+        if [ -z "${LARK_SPACE_ID}" ]; then
+          echo "⚠️  Warning: LARK_SPACE_ID not set. The script will fail if SPACE_ID is required."
+        fi
+        echo "LARK_APP_ID=${LARK_APP_ID}" >> $GITHUB_ENV
+        echo "LARK_APP_SECRET=${LARK_APP_SECRET}" >> $GITHUB_ENV
+        echo "LARK_ROOT_NODES=${LARK_ROOT_NODES}" >> $GITHUB_ENV
+        # Create .env file for script
+        echo "LARK_APP_ID=${LARK_APP_ID}" > .env
+        echo "LARK_APP_SECRET=${LARK_APP_SECRET}" >> .env
+        echo "LARK_ROOT_NODES=${LARK_ROOT_NODES}" >> .env
+        if [ -n "${LARK_SPACE_ID}" ]; then
+          echo "LARK_SPACE_ID=${LARK_SPACE_ID}" >> $GITHUB_ENV
+          echo "LARK_SPACE_ID=${LARK_SPACE_ID}" >> .env
+        fi
+    
+    - name: Get Wiki Content
+      run: |
+        chmod +x scripts/get_all_wiki_docs.sh
+        ./scripts/get_all_wiki_docs.sh
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./output
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

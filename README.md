@@ -1,78 +1,132 @@
 # Lark Wiki Document Retrieval Script
 
-A comprehensive script to retrieve all documents (including nested ones) from a Lark Wiki using a hybrid approach: Direct API calls + MCP tools.
+A comprehensive script to retrieve all documents (including nested ones) from a Lark Wiki using Server API only: Direct API calls for structure and content retrieval.
 
 ## Features
 
-- ✅ Recursive traversal of wiki tree structure
-- ✅ Automatic discovery of all nested documents
-- ✅ Multiple output formats (text, info, JSON)
-- ✅ Configurable via simple config section
+- ✅ Recursive traversal of wiki tree structure (root + nested documents)
+- ✅ Automatic discovery of all nested documents at any depth
+- ✅ Document content retrieval via Server API (blocks format)
+- ✅ Markdown conversion with full formatting support (headings, lists, code blocks, links, images, callouts, quotes)
+- ✅ Image download and preservation
+- ✅ Markdown files with full content
+- ✅ Directory structure preservation matching wiki hierarchy
+- ✅ Configurable via `.env` and `config.json` files
 - ✅ Verbose/debug mode support
-- ✅ Error handling and logging
+- ✅ Comprehensive error handling and logging
 
 ## Configuration
 
-Edit the configuration section at the top of the script:
+### 1. Setup Environment Variables
+
+Create a `.env` file in the project root (copy from `.env.example`):
 
 ```bash
-# Lark API Configuration
-APP_ID="your_app_id"
-APP_SECRET="your_app_secret"
-SPACE_ID="your_space_id"
-
-# Root Node Tokens (extract from wiki URLs)
-declare -a ROOT_NODES=(
-  "NODE_TOKEN_1|Title 1"
-  "NODE_TOKEN_2|Title 2"
-  "NODE_TOKEN_3|Title 3"
-)
-
-# Output Configuration
-OUTPUT_DIR="./temp"
-OUTPUT_FILE="$OUTPUT_DIR/wiki_documents_complete.txt"
-INFO_FILE="$OUTPUT_DIR/wiki_documents_info.txt"
-JSON_FILE="$OUTPUT_DIR/wiki_documents.json"
-
-# Options
-VERBOSE=false  # Set to true for debug output
-INCLUDE_CONTENT=true  # Set to false to skip content retrieval
+cp .env.example .env
 ```
 
+Edit `.env` with your credentials:
+
+```
+LARK_APP_ID=your_app_id
+LARK_APP_SECRET=your_app_secret
+LARK_SPACE_ID=your_space_id
+LARK_ROOT_NODES='["TOKEN1", "TOKEN2", "TOKEN3"]'
+```
+
+**Note:** `LARK_ROOT_NODES` should be a JSON array of node tokens (strings only). Titles are fetched automatically from the API.
+
+### 2. Configure Root Nodes
+
+**Root nodes are NOT auto-generated** - you need to manually configure them.
+
+**Manual configuration:**
+
+1. Open your Lark Wiki space in browser
+2. For each root page, copy the URL
+3. Extract the token from URL: `https://...larksuite.com/wiki/{TOKEN}`
+4. Add tokens to `.env` as `LARK_ROOT_NODES='["TOKEN1", "TOKEN2", "TOKEN3"]'`
+
+**Note:** Tenant token cannot list root nodes automatically (API limitation), so URLs must be provided manually.
+
+### 3. Permissions Setup
+
+Ensure your Lark app has the following permissions enabled (all as **Tenant token**):
+
+- `wiki:wiki:readonly` - Required for wiki structure traversal (**Tenant token**, not User token)
+- `wiki:node:read` - Required for reading wiki nodes
+- `wiki:node:retrieve` - Required for retrieving nested/child nodes (for full traversal)
+- `docx:document:readonly` - Required for document content retrieval
+- `docs:document.media:download` - Required for downloading images from documents
+
+**Note:** For nested document traversal, you need either `wiki:wiki:readonly` or `wiki:node:retrieve` as **Tenant token**. Enable permissions in Lark Open Platform or use the direct link provided in error messages.
+
 ## Usage
+
+### Option 1: GitHub Actions (Recommended - Serverless)
+
+The repository includes a GitHub Actions workflow that automatically:
+- Fetches wiki content daily (or on manual trigger)
+- Generates output files
+- Deploys to GitHub Pages
+
+**Setup:**
+1. Add secrets in GitHub: `LARK_APP_ID`, `LARK_APP_SECRET`, `LARK_ROOT_NODES`, `LARK_SPACE_ID`
+2. Enable GitHub Pages (Settings > Pages > Source: GitHub Actions)
+3. Workflow runs automatically
+
+See `docs/SERVERLESS_DEPLOYMENT.md` for detailed setup.
+
+### Option 2: Local Execution
 
 1. **Get your Lark credentials:**
    - App ID and App Secret from Lark Open Platform
    - Space ID from your wiki space
 
-2. **Extract root node tokens:**
-   - Open each root wiki page
-   - Extract token from URL: `https://...larksuite.com/wiki/{TOKEN}`
+2. **Configure root node tokens:**
+   - Manually add tokens to `.env` as `LARK_ROOT_NODES='["TOKEN1", "TOKEN2"]'`
+   - Extract tokens from wiki URLs: `https://...larksuite.com/wiki/{TOKEN}`
 
-3. **Configure the script:**
-   - Edit the configuration section
-   - Add all root node tokens
+3. **Setup configuration:**
+   - Copy `.env.example` to `.env` and fill in your credentials and root node tokens
+   - Edit `config.json` for output options (optional)
 
 4. **Run the script:**
    ```bash
-   chmod +x get_all_wiki_docs.sh
-   ./get_all_wiki_docs.sh
+   chmod +x scripts/get_all_wiki_docs.sh
+   ./scripts/get_all_wiki_docs.sh
    ```
 
 ## Output Files
 
-The script generates three output files:
+The script generates output in the `output/` directory (auto-generated by GitHub Actions):
 
-1. **`wiki_documents_complete.txt`** - Full text report with all document details
-2. **`wiki_documents_info.txt`** - Structured info report with tree view
-3. **`wiki_documents.json`** - JSON format for programmatic use
+1. **`output/`** - Directory structure with markdown files containing document content
+   - Markdown files mirror the wiki hierarchy structure
+   - Each file contains document metadata and full content
+2. **`output/images/`** - Downloaded images from documents
+   - Images are referenced in markdown as `images/{token}.png`
+   - All images are downloaded automatically when content is retrieved
+3. **`output/llms.txt`** - Standard format for LLM/AI tools (auto-generated)
+4. **`output/sitemap.xml`** - XML sitemap for search engines (auto-generated)
+5. **`output/index.html`** - Redirects to llms.txt (auto-generated)
 
 ## How It Works
 
-1. **Authentication**: Gets tenant access token using App ID/Secret
-2. **Traversal**: Recursively traverses wiki tree from root nodes
+1. **Authentication**: Gets tenant access token using App ID/Secret from `.env`
+2. **Traversal**: Recursively traverses wiki tree from root nodes defined in `.env`
 3. **Collection**: Collects all document tokens and metadata
-4. **Reporting**: Generates multiple output formats
+4. **Content Retrieval**: Retrieves document blocks using Server API (if `include_content: true`)
+   - Uses `/docx/v1/documents/{token}/blocks` endpoint
+   - Extracts images from blocks and downloads them
+   - Converts blocks to Markdown format with full formatting support
+5. **Image Download**: Downloads images using `/drive/v1/medias/{token}/download` endpoint
+   - Requires `docs:document.media:download` permission
+   - Images saved to `output/images/` directory
+6. **Output Generation**: Creates markdown files and AI discovery files
+   - Markdown files preserve document hierarchy
+   - Images referenced correctly in markdown
+   - Auto-generates llms.txt, sitemap.xml, and index.html for AI tools
 
 ## Requirements
 
@@ -84,17 +138,37 @@ The script generates three output files:
 ## Troubleshooting
 
 **Error: "Failed to get tenant token"**
-- Check your APP_ID and APP_SECRET
+- Check your `LARK_APP_ID` and `LARK_APP_SECRET` in `.env` file
 - Verify credentials in Lark Open Platform
+
+**Error: "Access denied. One of the following scopes is required: [wiki:wiki, wiki:wiki:readonly, wiki:node:retrieve]"**
+- This error occurs when trying to retrieve nested/child nodes
+- Enable `wiki:node:retrieve` permission as **Tenant token** in Lark Open Platform
+- OR enable `wiki:wiki:readonly` as **Tenant token** (not User token)
+- Follow the link provided in the error message to enable permissions
+
+**Error: "Access denied. One of the following scopes is required: [docx:document, docx:document:readonly]"**
+- Enable `docx:document:readonly` permission in Lark Open Platform
+- Follow the link provided in the error message to enable permissions
+
+**Error: "Missing permission 'docs:document.media:download'"**
+- Enable `docs:document.media:download` permission in Lark Open Platform
+- This permission is required for downloading images from documents
+- Follow the link provided in the error message to enable permissions
 
 **Error: "permission denied"**
 - Ensure your app has wiki read permissions
-- Check space ID is correct
+- Check space ID is correct in `.env` file
+
+**Images not downloading**
+- Verify `docs:document.media:download` permission is enabled
+- Check that images exist in the documents (some documents may not have images)
+- Ensure `include_content: true` in `config.json` to enable content retrieval
 
 **Missing nested documents**
-- Verify root node tokens are correct
+- Verify root node tokens are correct in `.env` file (not `config.json`)
 - Check if nodes have children (has_child flag)
-- Enable VERBOSE=true to see debug output
+- Enable `verbose: true` in `config.json` to see debug output
 
 ## Example Output
 
@@ -115,9 +189,39 @@ Root Documents: 3
 Nested Documents: 7
 ```
 
+**Output Structure:**
+```
+output/
+├── Welcome_to_Wiki.md               # Root document
+├── Administrator_Manual.md          # Root document
+├── Administrator_Manual/
+│   ├── Create_workspace.md          # Nested document
+│   └── _Manage_members.md           # Nested document
+├── Member_Manual.md                 # Root document
+├── Member_Manual/
+│   ├── _Enter_a_workspace.md       # Nested document
+│   ├── Team_collaboration.md        # Nested document
+│   ├── Add_pages.md                 # Nested document
+│   ├── Access_permissions.md        # Nested document
+│   └── FAQs.md                      # Nested document
+├── images/                          # Downloaded images
+│   ├── HSLFbhzCAojnvZxG8rIjPZZJpgb.png
+│   └── ...
+├── llms.txt                         # AI tool discovery (auto-generated)
+├── sitemap.xml                      # XML sitemap (auto-generated)
+└── index.html                       # Redirects to llms.txt (auto-generated)
+```
+
 ## Notes
 
-- Content retrieval currently uses placeholder (set `INCLUDE_CONTENT=false` to skip)
-- For actual content retrieval, integrate with MCP tools (docx.v1.document.rawContent)
+- Content retrieval uses Lark Server API with tenant access token
+- Set `include_content: false` in `config.json` to skip content retrieval for faster execution
 - The script handles unlimited nesting depth automatically
+- All sensitive credentials are stored in `.env` file (gitignored)
+- Configuration is separated: sensitive data in `.env`, non-sensitive in `config.json`
+- Images are automatically downloaded when content is retrieved
+- Markdown conversion preserves formatting: headings, lists, code blocks, links, images, callouts, quotes
+- Image tokens from document blocks are different from Drive file tokens - they require the `/medias/` endpoint
+- Directory structure in output mirrors the wiki hierarchy for easy navigation
+- All nested documents are automatically discovered and processed
 
