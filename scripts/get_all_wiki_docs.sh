@@ -979,11 +979,31 @@ PYEOF
       content="*Content retrieval disabled (set INCLUDE_CONTENT=true in config.json)*"
     fi
     
-    # Create markdown file with content only (no sensitive token information)
+    # Check if this node has children (sub-pages) and generate sub-page list
+    local sub_pages=""
+    for child_info in "${ALL_DOCUMENTS[@]}"; do
+      IFS='|' read -r child_doc_num child_level child_node_token child_doc_token child_title child_parent child_doc_path <<< "$child_info"
+      if [ "$child_parent" = "$title" ]; then
+        # This is a child of the current node
+        local child_safe_title=$(echo "$child_title" | sed 's/[^a-zA-Z0-9]/_/g' | sed 's/__*/_/g' | sed 's/^_\|_$//g')
+        local child_clean_path="${child_doc_path#/}"
+        local child_file_path="${child_clean_path}.md"
+        if [ -z "$sub_pages" ]; then
+          sub_pages="## Sub-page list\n\n"
+        fi
+        sub_pages="${sub_pages}- [$child_title]($child_file_path)\n"
+      fi
+    done
+    
+    # Create markdown file with content and sub-page list (no sensitive token information)
     {
       echo "# $title"
       echo ""
-      echo "$content"
+      echo -e "$content"
+      if [ -n "$sub_pages" ]; then
+      echo ""
+        echo -e "$sub_pages"
+      fi
     } > "$file_path"
   done
   
