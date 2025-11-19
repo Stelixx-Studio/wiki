@@ -662,25 +662,32 @@ generate_files_list() {
   # Create llms.txt following the standard format (based on llmstxt.org specification)
   {
     echo "# Stelixx Wiki Documentation"
-        echo ""
+    echo ""
     echo "> Documentation site containing wiki content exported from Lark Wiki. All content is available as Markdown files, JSON metadata, and images."
-        echo ""
+    echo ""
+    echo "## Base URL"
+    echo ""
+    echo "$base_url/"
+    echo ""
     echo "## Documentation Files"
-      echo ""
+    echo ""
+    echo "All documentation files are available as raw Markdown files accessible via direct HTTP GET requests:"
+    echo ""
     local i=0
     for file in "${md_files[@]}"; do
       local title="${md_titles[$i]}"
-      echo "- [$title]($base_url/$file): Documentation page"
+      echo "- $title: $base_url/$file"
       i=$((i + 1))
     done
     echo ""
     echo "## Resources"
     echo ""
-    echo "- [Images Directory]($base_url/images/): All images referenced in the documentation"
+    echo "- Images Directory: $base_url/images/"
+    echo "- Sitemap: $base_url/sitemap.xml"
     echo ""
     echo "## Access Information"
     echo ""
-    echo "All files are publicly accessible via direct URLs. Markdown files contain the full documentation content."
+    echo "All files are publicly accessible via direct URLs. Markdown files contain the full documentation content and are served with proper content-type headers. You can fetch any markdown file directly using HTTP GET requests to the URLs listed above."
   } > "$OUTPUT_DIRECTORY/llms.txt"
   
   # Create sitemap.xml for better AI tool discovery
@@ -712,9 +719,18 @@ generate_files_list() {
     echo "</html>"
   } > "$OUTPUT_DIRECTORY/index.html"
   
+  # Create robots.txt for better AI tool discovery
+  {
+    echo "User-agent: *"
+    echo "Allow: /"
+    echo ""
+    echo "Sitemap: $base_url/sitemap.xml"
+  } > "$OUTPUT_DIRECTORY/robots.txt"
+  
   log "INFO" "✓ LLMs index saved: llms.txt"
   log "INFO" "✓ Sitemap saved: sitemap.xml"
   log "INFO" "✓ Index page saved: index.html"
+  log "INFO" "✓ Robots.txt saved: robots.txt"
 }
 
 generate_structure_files() {
